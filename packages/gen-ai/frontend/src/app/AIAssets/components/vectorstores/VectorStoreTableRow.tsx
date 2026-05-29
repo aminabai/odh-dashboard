@@ -116,7 +116,10 @@ const VectorStoreTableRow: React.FC<VectorStoreTableRowProps> = ({
               variant={ButtonVariant.secondary}
               onClick={() =>
                 navigate(genAiChatPlaygroundRoute(namespace?.name), {
-                  state: { vectorStoreId: store.vector_store_id },
+                  state: {
+                    vectorStoreId: store.vector_store_id,
+                    openSettingsToTab: 'knowledge',
+                  },
                 })
               }
             >

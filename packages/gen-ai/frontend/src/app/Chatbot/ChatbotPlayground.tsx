@@ -143,6 +143,7 @@ const ChatbotPlayground: React.FC<ChatbotPlaygroundProps> = ({
   // Router state
   const location = useLocation();
   const selectedAAModel = location.state?.model;
+  const vectorStoreIdFromRoute: string | undefined = location.state?.vectorStoreId;
   const mcpServersFromRoute = React.useMemo(() => {
     const servers = location.state?.mcpServers;
     return Array.isArray(servers) ? servers : [];
@@ -276,18 +277,36 @@ const ChatbotPlayground: React.FC<ChatbotPlaygroundProps> = ({
     const preSelectMcp = openSettingsToTab !== 'mcp' ? mcpServersFromRoute : [];
     useChatbotConfigStore.getState().resetConfiguration({
       selectedMcpServerIds: preSelectMcp,
+      ...(vectorStoreIdFromRoute
+        ? {
+            knowledgeMode: 'external' as const,
+            isRagEnabled: true,
+            selectedVectorStoreId: vectorStoreIdFromRoute,
+          }
+        : {}),
     });
     return () => {
       useChatbotConfigStore.getState().resetConfiguration();
     };
-  }, [mcpServersFromRoute, selectedAAModel, openSettingsToTab]);
+  }, [mcpServersFromRoute, selectedAAModel, openSettingsToTab, vectorStoreIdFromRoute]);
+
+  // Pre-select vector store after child effects (ChatbotConfigInstance syncs
+  // selectedVectorStoreId to null for external mode on mount — this re-applies
+  // the route-provided value because parent effects run after children).
+  React.useEffect(() => {
+    if (vectorStoreIdFromRoute) {
+      const store = useChatbotConfigStore.getState();
+      store.updateSelectedVectorStoreId(primaryConfigId, vectorStoreIdFromRoute);
+    }
+  }, [vectorStoreIdFromRoute, primaryConfigId]);
 
   React.useEffect(() => {
     const shouldClear = Boolean(
       location.state?.mcpServers ||
         location.state?.model ||
         location.state?.mcpServerStatuses ||
-        location.state?.openSettingsToTab,
+        location.state?.openSettingsToTab ||
+        location.state?.vectorStoreId,
     );
     if (shouldClear) {
       const timeoutId = setTimeout(() => window.history.replaceState({}, ''), 100);
@@ -484,7 +503,9 @@ const ChatbotPlayground: React.FC<ChatbotPlaygroundProps> = ({
               onCloseClick={() => setIsDrawerExpanded(false)}
               onActiveConfigChange={setActivePaneConfigId}
               guardrailModelsError={guardrailModelsError}
-              defaultActiveTabKey={openSettingsToTab === 'mcp' ? 3 : undefined}
+              defaultActiveTabKey={
+                openSettingsToTab === 'mcp' ? 3 : openSettingsToTab === 'knowledge' ? 2 : undefined
+              }
             />
           }
         >
