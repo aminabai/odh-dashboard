@@ -221,7 +221,6 @@ const ChatbotSettingsPanel: React.FunctionComponent<ChatbotSettingsPanelProps> =
         </DrawerActions>
       </DrawerHead>
       <DrawerPanelBody>
-        {/* TODO: isFill prop requires @patternfly/react-core >= 6.5.0 — remove this comment once upgraded */}
         <ToggleGroup
           isFill
           aria-label="Chatbot settings page tabs"
